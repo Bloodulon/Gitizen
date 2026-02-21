@@ -1,0 +1,19 @@
+name: Gitizen
+version: '1.1'
+main: org.gitizen.gitizen.Gitizen
+api-version: '1.21'
+author: Bloodulon
+description: Синхронизация скриптов Denizen с GitHub
+
+commands:
+  gitizen:
+    description: Основная команда плагина
+    usage: /gitizen <sync|setup|scripts>
+
+permissions:
+  gitizen.sync:
+    description: Позволяет использовать /gitizen sync
+    default: op
+  gitizen.admin:
+    description: Полный доступ к настройке и списку скриптов
+    default: op

@@ -1,4 +1,0 @@
-name: Gitizen
-version: '1.0-SNAPSHOT'
-main: org.gitizen.gitizen.Gitizen
-api-version: '1.21'

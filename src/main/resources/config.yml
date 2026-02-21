@@ -1,0 +1,9 @@
+# Your repo url denizen scripts
+repo-url: ""
+
+# Your Personal Access Token (PAT) GitHub
+# GitHub (Settings -> Developer Settings -> Personal access tokens)
+github-token: ""
+
+# Your branch
+branch: "main"
