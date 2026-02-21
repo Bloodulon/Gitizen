@@ -62,7 +62,7 @@ Gitizen is a utility plugin for Minecraft servers that synchronizes the Denizen 
 
 ---
 
-**Лицензия**: MIT License (или укажите актуальную).  
-**Автор**: [Ваше имя или организация]  
-**Версия**: 1.0.0 (обновите по необходимости).  
+**Лицензия**: MIT License
+**Автор**: Bloodulon
+**Версия**: 0.21
 **Поддержка**: Если у вас есть вопросы, создайте issue в репозитории GitHub.
