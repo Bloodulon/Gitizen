@@ -1,60 +1,68 @@
-Gitizen
+# Gitizen
 
 Gitizen — это системный плагин для серверов Minecraft (Paper/Spigot), предназначенный для автоматизации деплоя скриптов Denizen напрямую из репозиториев GitHub.
-Russian (Русский)
-Описание
+
+![Gitizen Logo](https://via.placeholder.com/800x200?text=Gitizen+Plugin)
+
+## Русский (Russian)
+
+### Описание
 
 Плагин обеспечивает связь между вашей средой разработки на GitHub и рабочим сервером. Он устраняет необходимость использования ручных методов передачи файлов (таких как FTP или SFTP), позволяя обновлять логику сервера одной командой.
-Основные функции
 
-    Принудительная синхронизация: Использование стратегии Fetch и Hard Reset гарантирует, что локальные файлы на сервере будут идентичны состоянию репозитория, исключая ошибки слияния (merge conflicts).
+### Основные функции
 
-    Логирование изменений: Система сравнивает хеши коммитов и выводит список модифицированных файлов с маркерами статуса: [ADD] (добавлен), [MODIFY] (изменен), [DELETE] (удален).
+- **Принудительная синхронизация**: Использование стратегии Fetch и Hard Reset гарантирует, что локальные файлы на сервере будут идентичны состоянию репозитория, исключая ошибки слияния (merge conflicts).
+- **Логирование изменений**: Система сравнивает хеши коммитов и выводит список модифицированных файлов с маркерами статуса: **[ADD]** (добавлен), **[MODIFY]** (изменен), **[DELETE]** (удален).
+- **Автоматизация команд**: После завершения загрузки файлов плагин инициирует внутреннюю команду перезагрузки скриптов Denizen.
+- **Безопасность**: Поддержка аутентификации через Personal Access Tokens (PAT) позволяет работать с приватными репозиториями без передачи пароля от аккаунта.
 
-    Автоматизация команд: После завершения загрузки файлов плагин инициирует внутреннюю команду перезагрузки скриптов Denizen.
+### Команды и права доступа
 
-    Безопасность: Поддержка аутентификации через Personal Access Tokens (PAT) позволяет работать с приватными репозиториями без передачи пароля от аккаунта.
+| Команда                  | Описание                                      | Право (Permission) |
+|--------------------------|-----------------------------------------------|---------------------|
+| `/gitizen setup [url] [token]` | Конфигурация репозитория и токена доступа.   | `gitizen.admin`    |
+| `/gitizen sync`         | Запуск процесса синхронизации.                | `gitizen.sync`     |
+| `/gitizen list`         | Вывод списка всех файлов .dsc в папке скриптов. | `gitizen.admin`    |
 
-Команды и права доступа
-Команда	Описание	Право (Permission)
-/gitizen setup [url] [token]	Конфигурация репозитория и токена доступа.	gitizen.admin
-/gitizen sync	Запуск процесса синхронизации.	gitizen.sync
-/gitizen list	Вывод списка всех файлов .dsc в папке скриптов.	gitizen.admin
-Порядок установки
+### Порядок установки
 
-    Разместите JAR-файл в папку plugins и запустите сервер.
+1. Разместите JAR-файл в папку `plugins` и запустите сервер.
+2. Сгенерируйте токен доступа в настройках GitHub (Developer Settings > Personal access tokens).
+3. Выполните команду настройки: `/gitizen setup <url> <token>` или же зайдите в `plugins\Gitizen\config.yml` и настройте в ручную (**РЕКОМЕНДОВАНО**).
+4. Выполните `/gitizen sync` для первичной загрузки данных.
 
-    Сгенерируйте токен доступа в настройках GitHub (Developer Settings > Personal access tokens).
+## English
 
-    Выполните команду настройки: /gitizen setup <url> <token> или же зайдите в plugins\Gitizen\config.yml и настройте в ручную (РЕКОМЕНДОВАНО)
-
-    Выполните /gitizen sync для первичной загрузки данных.
-
-English
-Description
+### Description
 
 Gitizen is a utility plugin for Minecraft servers that synchronizes the Denizen scripts directory with a remote GitHub repository. It streamlines the development workflow by removing the need for manual file uploads.
-Features
 
-    Conflict-Free Sync: By employing Fetch and Hard Reset operations, the plugin ensures the server's script folder strictly matches the remote repository, bypassing any potential local conflicts.
+### Features
 
-    Change Tracking: During synchronization, the plugin analyzes the difference between commits and reports all changes using status markers: [ADD], [MODIFY], and [DELETE].
+- **Conflict-Free Sync**: By employing Fetch and Hard Reset operations, the plugin ensures the server's script folder strictly matches the remote repository, bypassing any potential local conflicts.
+- **Change Tracking**: During synchronization, the plugin analyzes the difference between commits and reports all changes using status markers: **[ADD]**, **[MODIFY]**, and **[DELETE]**.
+- **Execution Hooks**: Automatically triggers the Denizen script reload process upon successful synchronization.
+- **Private Repository Support**: Securely connects to GitHub using Personal Access Tokens (PAT).
 
-    Execution Hooks: Automatically triggers the Denizen script reload process upon successful synchronization.
+### Commands and Permissions
 
-    Private Repository Support: Securely connects to GitHub using Personal Access Tokens (PAT).
+| Command                  | Description                                      | Permission         |
+|--------------------------|--------------------------------------------------|--------------------|
+| `/gitizen setup [url] [token]` | Configures the repository URL and access token. | `gitizen.admin`   |
+| `/gitizen sync`         | Triggers the synchronization process.            | `gitizen.sync`    |
+| `/gitizen list`         | Displays a list of all current .dsc files.       | `gitizen.admin`   |
 
-Commands and Permissions
-Command	Description	Permission
-/gitizen setup [url] [token]	Configures the repository URL and access token.	gitizen.admin
-/gitizen sync	Triggers the synchronization process.	gitizen.sync
-/gitizen list	Displays a list of all current .dsc files.	gitizen.admin
-Installation
+### Installation
 
-    Install the plugin and restart the server.
+1. Install the plugin and restart the server.
+2. Create a GitHub Personal Access Token with the 'repo' scope.
+3. Use the command: `/gitizen setup <url> <token>` to link your repository OR go to `plugins\Gitizen\config.yml` and configure manually (**RECOMMENDED**).
+4. Run `/gitizen sync` to deploy your scripts.
 
-    Create a GitHub Personal Access Token with the 'repo' scope.
+---
 
-    Use the command: /gitizen setup <url> <token> to link your repository OR go to plugins\Gitizen\config.yml and configure manually (RECOMMENDED)
-
-    Run /gitizen sync to deploy your scripts.
+**Лицензия**: MIT License (или укажите актуальную).  
+**Автор**: [Ваше имя или организация]  
+**Версия**: 1.0.0 (обновите по необходимости).  
+**Поддержка**: Если у вас есть вопросы, создайте issue в репозитории GitHub.
