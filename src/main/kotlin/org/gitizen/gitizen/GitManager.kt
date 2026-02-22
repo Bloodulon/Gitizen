@@ -68,7 +68,6 @@ class GitManager(
                 .setOldTree(oldTreeIter)
                 .call()
                 .forEach { diff ->
-                    // Красиво форматируем вывод
                     val type = when (diff.changeType) {
                         DiffEntry.ChangeType.ADD -> "§a[+]§f"     // Добавлен
                         DiffEntry.ChangeType.MODIFY -> "§e[*]§f"  // Изменен
@@ -87,6 +86,55 @@ class GitManager(
         return File(scriptsDir, ".git").exists()
     }
 
+    fun getRecentLogs(limit: Int = 3): List<String> {
+        val logs = mutableListOf<String>()
+        try {
+            org.eclipse.jgit.api.Git.open(scriptsDir).use { git ->
+                val history = git.log().setMaxCount(limit).call()
+
+                for (commit in history) {
+                    val author = commit.authorIdent.name
+                    val message = commit.shortMessage
+                    val hash = commit.name.substring(0, 7)
+
+                    logs.add("§8[§7$hash§8] §f$message §7($author)")
+
+                    val repository = git.repository
+                    val reader = repository.newObjectReader()
+
+                    val oldTreeIter = org.eclipse.jgit.treewalk.EmptyTreeIterator()
+                    val newTreeIter = org.eclipse.jgit.treewalk.CanonicalTreeParser()
+                    newTreeIter.reset(reader, commit.tree)
+
+                    val diffCommand = git.diff().setNewTree(newTreeIter)
+
+                    if (commit.parentCount > 0) {
+                        val parent = repository.parseCommit(commit.getParent(0).id)
+                        val parentTreeIter = org.eclipse.jgit.treewalk.CanonicalTreeParser()
+                        parentTreeIter.reset(reader, parent.tree)
+                        diffCommand.setOldTree(parentTreeIter)
+                    } else {
+                        diffCommand.setOldTree(oldTreeIter)
+                    }
+
+                    diffCommand.call().forEach { diff ->
+                        val path = if (diff.changeType == org.eclipse.jgit.diff.DiffEntry.ChangeType.DELETE) diff.oldPath else diff.newPath
+                        val prefix = when (diff.changeType) {
+                            org.eclipse.jgit.diff.DiffEntry.ChangeType.ADD -> "§a+"
+                            org.eclipse.jgit.diff.DiffEntry.ChangeType.MODIFY -> "§e*"
+                            org.eclipse.jgit.diff.DiffEntry.ChangeType.DELETE -> "§c-"
+                            else -> "§7?"
+                        }
+                        logs.add("  §8$prefix §7$path")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            logs.add("§cОшибка при чтении логов: ${e.message}")
+        }
+        return logs
+    }
+
     private fun cloneRepo() {
         Git.cloneRepository()
             .setURI(repoUrl)
@@ -98,19 +146,4 @@ class GitManager(
             .use { it.close() }
     }
 
-    private fun pullRepo() {
-        Git.open(scriptsDir).use { git ->
-            val pullResult = git.pull()
-                .setCredentialsProvider(credentials)
-                .setRemote("origin")
-                .setRebase(true)
-                .call()
-            if (!pullResult.isSuccessful) {
-                git.reset()
-                    .setMode(org.eclipse.jgit.api.ResetCommand.ResetType.HARD)
-                    .setRef("origin/main")
-                    .call()
-            }
-        }
-    }
 }

@@ -6,7 +6,7 @@
 
     <groupId>org.gitizen</groupId>
     <artifactId>Gitizen</artifactId>
-    <version>0.21-DEV</version>
+    <version>0.22-REL</version>
     <packaging>jar</packaging>
 
     <name>Gitizen</name>

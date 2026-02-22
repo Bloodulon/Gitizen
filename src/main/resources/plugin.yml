@@ -8,7 +8,7 @@ description: Синхронизация скриптов Denizen с GitHub
 commands:
   gitizen:
     description: Основная команда плагина
-    usage: /gitizen <sync|setup|scripts>
+    usage: /gitizen <sync|setup|scripts|logs>
 
 permissions:
   gitizen.sync:

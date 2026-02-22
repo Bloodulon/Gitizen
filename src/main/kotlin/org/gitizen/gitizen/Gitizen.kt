@@ -42,6 +42,7 @@ class Gitizen : JavaPlugin(), CommandExecutor, TabCompleter {
             if (sender.hasPermission("gitizen.admin")) {
                 suggestions.add("setup")
                 suggestions.add("list")
+                suggestions.add("logs")
             }
             return suggestions.filter { it.startsWith(args[0], ignoreCase = true) }
         }
@@ -100,6 +101,20 @@ class Gitizen : JavaPlugin(), CommandExecutor, TabCompleter {
                 } else {
                     files.forEach { sender.sendMessage("${it.name}") }
                 }
+            }
+            "logs" -> {
+                sender.sendMessage("§b[Gitizen] Последние 3 изменения в репозитории:")
+                server.scheduler.runTaskAsynchronously(this, Runnable {
+                    val logLines = gitManager.getRecentLogs(3)
+
+                    server.scheduler.runTask(this, Runnable {
+                        if (logLines.isEmpty()) {
+                            sender.sendMessage("§7История коммитов пуста.")
+                        } else {
+                            logLines.forEach { line -> sender.sendMessage(line) }
+                        }
+                    })
+                })
             }
         }
         return true
