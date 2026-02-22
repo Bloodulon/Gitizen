@@ -89,7 +89,7 @@ class GitManager(
     fun getRecentLogs(limit: Int = 3): List<String> {
         val logs = mutableListOf<String>()
         try {
-            org.eclipse.jgit.api.Git.open(scriptsDir).use { git ->
+            Git.open(scriptsDir).use { git ->
                 val history = git.log().setMaxCount(limit).call()
 
                 for (commit in history) {
@@ -103,14 +103,14 @@ class GitManager(
                     val reader = repository.newObjectReader()
 
                     val oldTreeIter = org.eclipse.jgit.treewalk.EmptyTreeIterator()
-                    val newTreeIter = org.eclipse.jgit.treewalk.CanonicalTreeParser()
+                    val newTreeIter = CanonicalTreeParser()
                     newTreeIter.reset(reader, commit.tree)
 
                     val diffCommand = git.diff().setNewTree(newTreeIter)
 
                     if (commit.parentCount > 0) {
                         val parent = repository.parseCommit(commit.getParent(0).id)
-                        val parentTreeIter = org.eclipse.jgit.treewalk.CanonicalTreeParser()
+                        val parentTreeIter = CanonicalTreeParser()
                         parentTreeIter.reset(reader, parent.tree)
                         diffCommand.setOldTree(parentTreeIter)
                     } else {
@@ -118,11 +118,11 @@ class GitManager(
                     }
 
                     diffCommand.call().forEach { diff ->
-                        val path = if (diff.changeType == org.eclipse.jgit.diff.DiffEntry.ChangeType.DELETE) diff.oldPath else diff.newPath
+                        val path = if (diff.changeType == DiffEntry.ChangeType.DELETE) diff.oldPath else diff.newPath
                         val prefix = when (diff.changeType) {
-                            org.eclipse.jgit.diff.DiffEntry.ChangeType.ADD -> "§a+"
-                            org.eclipse.jgit.diff.DiffEntry.ChangeType.MODIFY -> "§e*"
-                            org.eclipse.jgit.diff.DiffEntry.ChangeType.DELETE -> "§c-"
+                            DiffEntry.ChangeType.ADD -> "§a+"
+                            DiffEntry.ChangeType.MODIFY -> "§e*"
+                            DiffEntry.ChangeType.DELETE -> "§c-"
                             else -> "§7?"
                         }
                         logs.add("  §8$prefix §7$path")
