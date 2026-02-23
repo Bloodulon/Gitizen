@@ -2,8 +2,6 @@
 
 Gitizen — это системный плагин для серверов Minecraft (Paper/Spigot), предназначенный для автоматизации деплоя скриптов Denizen напрямую из репозиториев GitHub.
 
-![Gitizen Logo](https://via.placeholder.com/800x200?text=Gitizen+Plugin)
-
 ## Русский (Russian)
 
 ### Описание
