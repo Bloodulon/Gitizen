@@ -1,19 +1,39 @@
 name: Gitizen
-version: '1.1'
+version: '${project.version}'
 main: org.gitizen.gitizen.Gitizen
 api-version: '1.21'
 author: Bloodulon
-description: Синхронизация скриптов Denizen с GitHub
+description: Безопасный deployment скриптов Denizen из Git
+depend: [Denizen]
 
 commands:
   gitizen:
-    description: Основная команда плагина
-    usage: /gitizen <sync|setup|scripts|logs>
+    description: Управление Git deployment скриптов Denizen
+    usage: /gitizen <sync|status|rollback|logs|list|profiles|setup|reload>
+    aliases: [gitz]
 
 permissions:
   gitizen.sync:
-    description: Позволяет использовать /gitizen sync
+    description: Запуск синхронизации
+    default: op
+  gitizen.status:
+    description: Просмотр статуса и профилей
+    default: op
+  gitizen.rollback:
+    description: Откат deployment
+    default: op
+  gitizen.logs:
+    description: Просмотр истории Git
+    default: op
+  gitizen.list:
+    description: Просмотр списка скриптов
     default: op
   gitizen.admin:
-    description: Полный доступ к настройке и списку скриптов
+    description: Полный доступ к Gitizen
     default: op
+    children:
+      gitizen.sync: true
+      gitizen.status: true
+      gitizen.rollback: true
+      gitizen.logs: true
+      gitizen.list: true

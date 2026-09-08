@@ -1,9 +1,51 @@
-# Your repo url denizen scripts
-repo-url: ""
+# Профиль, используемый командами без явного имени.
+default-profile: "production"
 
-# Your Personal Access Token (PAT) GitHub
-# GitHub (Settings -> Developer Settings -> Personal access tokens)
-github-token: ""
+# Репозитории и каталоги deployment.
+# target-directory всегда задаётся относительно plugins/Denizen.
+profiles:
+  production:
+    repo-url: ""
+    branch: "main"
+    repository-subdirectory: ""
+    target-directory: "scripts"
+    reload-denizen: true
+    username: "gitizen"
+    # Рекомендуется хранить PAT в переменной окружения, а не в этом файле.
+    token-env: "GITIZEN_GITHUB_TOKEN"
+    token: ""
 
-# Your branch
-branch: "main"
+  staging:
+    repo-url: ""
+    branch: "staging"
+    repository-subdirectory: ""
+    target-directory: "scripts-staging"
+    reload-denizen: false
+    username: "gitizen"
+    token-env: "GITIZEN_GITHUB_TOKEN"
+    token: ""
+
+security:
+  require-https: true
+  allowed-hosts:
+    - "github.com"
+
+validation:
+  require-dsc-files: true
+  max-script-size-kb: 1024
+
+deployment:
+  max-history: 20
+  max-changes-in-chat: 30
+
+# Отдельный сервис для уведомлений не нужен: Gitizen отправляет HTTPS-запросы
+# непосредственно с Minecraft-сервера. Хостинг должен разрешать исходящий HTTPS.
+notifications:
+  discord:
+    webhook-url-env: "GITIZEN_DISCORD_WEBHOOK"
+    webhook-url: ""
+  telegram:
+    bot-token-env: "GITIZEN_TELEGRAM_BOT_TOKEN"
+    chat-id-env: "GITIZEN_TELEGRAM_CHAT_ID"
+    bot-token: ""
+    chat-id: ""
