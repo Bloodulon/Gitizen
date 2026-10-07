@@ -3,6 +3,7 @@ package org.gitizen.gitizen
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.diff.DiffEntry
 import org.eclipse.jgit.lib.ObjectId
+import org.eclipse.jgit.lib.Constants
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.URIish
@@ -18,6 +19,49 @@ import java.util.UUID
 import kotlin.io.path.exists
 
 class GitManager(private val repositoriesRoot: File) {
+
+    fun preserveLocalChanges(profile: ProfileConfig, deployedCommit: String?): List<String> {
+        val target = profile.targetDirectory.toPath()
+        if (!Files.isDirectory(target)) return emptyList()
+        openOrClone(profile).use { git ->
+            fetch(git, profile)
+            val base = deployedCommit?.let { resolveCommit(git, it) }
+            if (deployedCommit != null && base == null) {
+                return listOf("Не удалось найти базовый commit $deployedCommit для сравнения.")
+            }
+            if (containsSymlink(target)) return listOf("В каталоге скриптов найдена символическая ссылка.")
+            val actual = relativeFiles(target, excludeGit = false)
+            val expected = base?.let { committedFiles(git, it, profile, actual.keys) }.orEmpty()
+            if (deployedCommit == null && actual.isEmpty()) return emptyList()
+            val drift = (expected.keys + actual.keys).filter { relative ->
+                val expectedFile = expected[relative]
+                val actualFile = actual[relative]
+                expectedFile == null || actualFile == null ||
+                    !Files.readAllBytes(actualFile).contentEquals(expectedFile)
+            }.sorted()
+            if (drift.isEmpty()) return emptyList()
+
+            val snapshot = repositoriesRoot.toPath()
+                .resolve("conflicts")
+                .resolve(profile.name)
+                .resolve(Instant.now().toString().replace(':', '-'))
+            drift.forEach { relative ->
+                val destination = snapshot.resolve(relative).normalize()
+                require(destination.startsWith(snapshot)) { "Недопустимый путь локального файла." }
+                val actualFile = actual[relative]
+                if (actualFile != null) {
+                    Files.createDirectories(destination.parent)
+                    Files.copy(actualFile, destination, StandardCopyOption.REPLACE_EXISTING)
+                } else {
+                    val marker = snapshot.resolve(".deleted").resolve(relative).normalize()
+                    require(marker.startsWith(snapshot)) { "Недопустимый путь удалённого файла." }
+                    Files.createDirectories(marker.parent)
+                    Files.writeString(marker, "Deleted locally; expected in ${base?.name ?: "unknown deployment"}\n")
+                }
+            }
+            return listOf("Локальные изменения сохранены: ${snapshot.toAbsolutePath()}") + drift
+        }
+    }
 
     fun prepareSync(profile: ProfileConfig, deployedCommit: String?): PreparationResult {
         val started = System.nanoTime()
@@ -109,9 +153,52 @@ class GitManager(private val repositoriesRoot: File) {
                 remoteHead = git.repository.resolve(remoteRef(profile))?.name,
                 deployedCommit = lastDeployment?.commit,
                 lastDeployment = lastDeployment,
-                metrics = metrics
+                metrics = metrics,
+                localDriftFiles = localDriftFiles(git, profile, lastDeployment?.commit)
             )
         }
+    }
+
+    private fun localDriftFiles(git: Git, profile: ProfileConfig, deployedCommit: String?): List<String> {
+        val target = profile.targetDirectory.toPath()
+        if (!Files.isDirectory(target) || deployedCommit == null) return emptyList()
+        val base = resolveCommit(git, deployedCommit) ?: return listOf("<базовый commit недоступен>")
+        if (containsSymlink(target)) return listOf("<символическая ссылка>")
+        val actual = relativeFiles(target, excludeGit = false)
+        val expected = committedFiles(git, base, profile, actual.keys)
+        return (expected.keys + actual.keys).filter { relative ->
+            val left = expected[relative]
+            val right = actual[relative]
+            left == null || right == null || !Files.readAllBytes(right).contentEquals(left)
+        }.sorted()
+    }
+
+    private fun committedFiles(
+        git: Git,
+        commit: ObjectId,
+        profile: ProfileConfig,
+        paths: Set<String>
+    ): Map<String, ByteArray> {
+        val prefix = if (profile.repositorySubdirectory.isBlank()) "" else
+            profile.repositorySubdirectory.trim('/').replace('\\', '/') + "/"
+        val tree = git.repository.parseCommit(commit).tree
+        val files = linkedMapOf<String, ByteArray>()
+        git.repository.newObjectReader().use { reader ->
+            val walk = org.eclipse.jgit.treewalk.TreeWalk(git.repository, reader)
+            walk.use {
+                it.addTree(tree)
+                it.isRecursive = true
+                while (it.next()) {
+                    val path = it.pathString
+                    if (!path.startsWith(prefix)) continue
+                    val relative = path.removePrefix(prefix)
+                    if (relative.isNotBlank() && relative in paths) {
+                        files[relative] = reader.open(it.getObjectId(0), Constants.OBJ_BLOB).bytes
+                    }
+                }
+            }
+        }
+        return files
     }
 
     fun recentLogs(profile: ProfileConfig, limit: Int): List<CommitInfo> {

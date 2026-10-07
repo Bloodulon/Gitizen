@@ -159,6 +159,10 @@ class Gitizen : JavaPlugin(), CommandExecutor, TabCompleter {
         server.scheduler.runTaskAsynchronously(this, Runnable {
             val prepared = try {
                 if (kind == DeploymentKind.SYNC) {
+                    val localChanges = gitManager.preserveLocalChanges(profile, deployedCommit)
+                    if (localChanges.isNotEmpty()) throw LocalChangesDetected(localChanges)
+                }
+                if (kind == DeploymentKind.SYNC) {
                     gitManager.prepareSync(profile, deployedCommit)
                 } else {
                     gitManager.prepareRollback(profile, revision!!, deployedCommit)
@@ -174,7 +178,9 @@ class Gitizen : JavaPlugin(), CommandExecutor, TabCompleter {
                         false,
                         profile.name,
                         null,
-                        "Подготовка не выполнена: ${prepared.message}"
+                        if (prepared.cause is LocalChangesDetected) {
+                            "Sync остановлен: ${prepared.message}"
+                        } else "Подготовка не выполнена: ${prepared.message}"
                     )
                     finish(sender, result)
                 }
@@ -268,6 +274,16 @@ class Gitizen : JavaPlugin(), CommandExecutor, TabCompleter {
                             "Состояние: доступно обновление или активен rollback"
                         }
                     )
+                    if (status.localDriftFiles.isNotEmpty()) {
+                        Messages.error(
+                            sender,
+                            "Обнаружены локальные изменения (${status.localDriftFiles.size}): " +
+                                status.localDriftFiles.take(8).joinToString(", ")
+                        )
+                        if (status.localDriftFiles.size > 8) {
+                            Messages.info(sender, "Ещё ${status.localDriftFiles.size - 8} файлов.")
+                        }
+                    }
                     Messages.info(
                         sender,
                         "Последний успешный deploy: ${Messages.formatTime(status.metrics.lastSuccessfulAtMillis)}"
@@ -419,4 +435,7 @@ class Gitizen : JavaPlugin(), CommandExecutor, TabCompleter {
     private fun filter(values: Collection<String>, input: String): List<String> {
         return values.filter { it.startsWith(input, ignoreCase = true) }.sorted()
     }
+
+    private class LocalChangesDetected(val details: List<String>) :
+        IllegalStateException(details.joinToString("; "))
 }

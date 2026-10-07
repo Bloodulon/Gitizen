@@ -95,7 +95,8 @@ data class RepositoryStatus(
     val remoteHead: String?,
     val deployedCommit: String?,
     val lastDeployment: DeploymentRecord?,
-    val metrics: ProfileMetrics
+    val metrics: ProfileMetrics,
+    val localDriftFiles: List<String> = emptyList()
 )
 
 data class DeploymentResult(

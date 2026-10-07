@@ -57,6 +57,7 @@ Gitizen загружает нужную ветку репозитория, пр�
 - Интерактивные сообщения: hover-подсказки, копирование hash и ссылки на GitHub.
 - Защита от одновременного запуска двух операций одного профиля.
 - Обнаружение файлов, вручную изменённых в рабочем каталоге.
+- Сохранение серверных изменений в отдельный снимок и блокировка sync до ручного разбора.
 
 Git checkout хранится в `plugins/Gitizen/repositories`, а не в
 `plugins/Denizen/scripts`. Поэтому папка Denizen не содержит `.git` и используется
@@ -225,6 +226,15 @@ Gitizen выполнит следующую последовательность
 7. При ошибке автоматически вернёт предыдущие скрипты.
 
 После успешной команды изменения становятся активными на игровом сервере.
+
+Перед sync Gitizen сравнивает активные скрипты с последним успешным deployment.
+Если файлы на сервере меняли вручную, команда остановится и сохранит добавленные и
+изменённые файлы в `plugins/Gitizen/conflicts/<profile>/<timestamp>`. Для удалённых
+файлов создаются маркеры в `.deleted`. Перенесите нужные правки в Git checkout,
+объедините их с GitHub и отправьте в настроенную ветку; затем повторите sync.
+`/gitizen status` показывает список обнаруженных локальных расхождений. Gitizen не
+отправляет серверные изменения в GitHub автоматически и не выполняет конфликтное
+слияние без участия администратора.
 
 ### Что произойдёт при sync staging
 
@@ -575,6 +585,7 @@ automatically when Denizen reports an error.
 - Discord and Telegram notifications.
 - Adventure components with hover details, hash copying, and GitHub links.
 - Per-profile operation lock and working-directory drift detection.
+- Preservation of server-side edits in a separate snapshot and sync blocking for review.
 
 Git checkouts are stored under `plugins/Gitizen/repositories`. The active
 `plugins/Denizen/scripts` directory is not used as a Git repository.
@@ -713,6 +724,14 @@ directory, validates its `.dsc` files, replaces `plugins/Denizen/scripts`, and
 reloads Denizen. If the reload reports an error, Gitizen restores the previous
 directory automatically. A successful production deployment becomes live
 immediately.
+
+Before sync, Gitizen compares active scripts with the last successful deployment.
+If files were edited on the server, sync stops and saves added or modified files under
+`plugins/Gitizen/conflicts/<profile>/<timestamp>`. Deleted files receive markers under
+`.deleted`. Review and merge the saved edits into your Git checkout, push them to the
+configured branch, and retry sync. `/gitizen status` lists detected drift. Gitizen
+does not push server edits to GitHub or attempt a potentially conflicting merge
+automatically.
 
 ### What sync staging does
 

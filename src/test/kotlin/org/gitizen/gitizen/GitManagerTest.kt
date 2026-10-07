@@ -104,6 +104,42 @@ class GitManagerTest {
         }
     }
 
+    @Test
+    fun `manual server edits are preserved for review before sync`() {
+        createRepository("remote-preserve", "main", "deployed version").use { remote ->
+            val manager = GitManager(temp.resolve("gitizen-data").toFile())
+            val profile = profile("preserve", remote.repository.workTree.toURI().toString(), "main")
+            val first = manager.prepareSync(profile, null) as PreparationResult.Ready
+            val deployedCommit = first.deployment.commit.hash
+            Files.createDirectories(profile.targetDirectory.toPath())
+            Files.copy(
+                first.deployment.stagingDirectory.resolve("example.dsc"),
+                profile.targetDirectory.toPath().resolve("example.dsc")
+            )
+            manager.discard(first.deployment)
+
+            Files.writeString(profile.targetDirectory.toPath().resolve("example.dsc"), "server edit")
+            Files.writeString(profile.targetDirectory.toPath().resolve("new.dsc"), "server only")
+
+            val changes = manager.preserveLocalChanges(profile, deployedCommit)
+            assertTrue(changes.any { it.contains("сохранены") })
+            val snapshots = Files.list(temp.resolve("gitizen-data/conflicts/preserve"))
+            val snapshot = snapshots.use { it.findFirst().orElseThrow() }
+            assertEquals("server edit", Files.readString(snapshot.resolve("example.dsc")))
+            assertEquals("server only", Files.readString(snapshot.resolve("new.dsc")))
+            val deployment = DeploymentRecord(
+                commit = deployedCommit,
+                author = "test",
+                message = "deployed",
+                deployedAtMillis = 0,
+                durationMillis = 0,
+                changedFiles = 1,
+                kind = DeploymentKind.SYNC
+            )
+            assertTrue(manager.status(profile, deployment, ProfileMetrics()).localDriftFiles.contains("new.dsc"))
+        }
+    }
+
     private fun createRepository(name: String, branch: String, content: String): Git {
         val directory = temp.resolve(name)
         Files.createDirectories(directory)
